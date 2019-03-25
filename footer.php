@@ -51,5 +51,4 @@ window.et_pb_smooth_scroll=function($target,$top_section,speed,easing){
  });
     	
   </script>
-
 <?php endif; ?>
