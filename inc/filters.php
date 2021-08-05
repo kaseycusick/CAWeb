@@ -11,6 +11,8 @@ add_filter( 'post_class', 'caweb_post_class', 15 );
 add_filter( 'theme_page_templates', 'caweb_theme_page_templates', 15 );
 add_filter( 'script_loader_tag', 'caweb_script_loader_tag', 10, 3 );
 add_filter( 'map_meta_cap', 'caweb_add_unfiltered_html_capability', 1, 3 );
+add_filter( 'allowed_redirect_hosts', 'caweb_allowed_redirect_hosts' );
+add_filter( 'xmlrpc_enabled', 'caweb_xmlrpc_enabled' );
 
 /* Plugin Filters */
 add_filter( 'wpforms_manage_cap', 'caweb_wpforms_custom_capability' );
@@ -41,7 +43,7 @@ function caweb_body_class( $wp_classes, $extra_classes ) {
 
 	/* List of extra classes that need to be added to the body */
 	if ( isset( $post->ID ) ) {
-		$divi              = et_pb_is_pagebuilder_used( $post->ID ) || strpos( $post->post_content, 'et_pb_section' ) || strpos( $post->post_content, 'et_pb_fullwidth_section' );
+		$divi              = function_exists( 'et_pb_is_pagebuilder_used' ) && et_pb_is_pagebuilder_used( $post->ID ) || strpos( $post->post_content, 'et_pb_section' ) || strpos( $post->post_content, 'et_pb_fullwidth_section' );
 		$sidebar_enabled   = ! is_page();
 		$special_templates = is_tag() || is_archive() || is_category() || is_author();
 
@@ -66,7 +68,7 @@ function caweb_body_class( $wp_classes, $extra_classes ) {
  *
  * @link https://developer.wordpress.org/reference/hooks/post_class/
  * @param  array $classes An array of post class names.
- *
+ * @category add_filter( 'post_class','caweb_post_class' , 15 );
  * @return array
  */
 function caweb_post_class( $classes ) {
@@ -147,3 +149,31 @@ function caweb_wpforms_custom_capability( $cap ) {
 	return is_multisite() ? 'edit_posts' : 'unfiltered_html';
 }
 
+/**
+ * CAWeb Disable XMLRPC
+ *
+ * @return boolean
+ */
+function caweb_xmlrpc_enabled() {
+	return false;
+}
+
+/**
+ * CAWeb Allowed Redirected Hosts
+ *
+ * Filters the list of allowed hosts to redirect to.
+ *
+ * @param  array $hosts An array of allowed host names.
+ * @return array
+ */
+function caweb_allowed_redirect_hosts( $hosts ) {
+	// Add all sites to list of allowed hosts.
+	$domains = array_map(
+		function( $s ) {
+			return $s->domain;
+		},
+		get_sites( array( 'deleted' => 0 ) )
+	);
+
+	return array_merge( $hosts, $domains );
+};

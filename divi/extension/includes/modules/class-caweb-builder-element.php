@@ -2,7 +2,7 @@
 /**
  * CAWeb Module
  *
- * @package CAWeb Module Extension
+ * @package CAWebModuleExtension
  */
 
 /**
@@ -40,7 +40,9 @@ class ET_Builder_CAWeb_Module extends ET_Builder_Module {
 	 *
 	 * @return string
 	 */
+	//phpcs:disable
 	protected function _render_module_wrapper( $output = '', $render_slug = '' ) {
+	//phpcs:enable
 		return $output;
 	}
 
@@ -272,7 +274,7 @@ class ET_Builder_CAWeb_Module extends ET_Builder_Module {
 					$tags    = ! is_array( $tags ) ? explode( ',', $tags ) : $tags;
 					$has_tag = false;
 					foreach ( $tag_ids as $k ) {
-						if ( in_array( $k, $tags, false ) ) {
+						if ( in_array( (string) $k, $tags, true ) ) {
 							$has_tag = true;
 						}
 					}

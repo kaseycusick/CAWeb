@@ -403,7 +403,7 @@ function caweb_save_options( $values = array(), $files = array() ) {
 			'color'        => isset( $values[ "alert-banner-color-$i" ] ) ? $values[ "alert-banner-color-$i" ] : '#FDB81E',
 			'button'       => isset( $values[ "alert-read-more-$i" ] ) ? $values[ "alert-read-more-$i" ] : '',
 			'url'          => isset( $values[ "alert-read-more-url-$i" ] ) ? $values[ "alert-read-more-url-$i" ] : '',
-			'text'          => isset( $values[ "alert-read-more-text-$i" ] ) ? $values[ "alert-read-more-text-$i" ] : '',
+			'text'         => isset( $values[ "alert-read-more-text-$i" ] ) ? $values[ "alert-read-more-text-$i" ] : '',
 			'target'       => isset( $values[ "alert-read-more-target-$i" ] ) ? $values[ "alert-read-more-target-$i" ] : '',
 			'icon'         => isset( $values[ "alert-icon-$i" ] ) ? $values[ "alert-icon-$i" ] : '',
 		);
@@ -436,6 +436,15 @@ function caweb_save_options( $values = array(), $files = array() ) {
 					mkdir( "$ext_js_dir/$site_id", 0777, true );
 				}
 				$wp_filesystem->put_contents( "$ext_js_dir/$site_id/caweb-custom.js", wp_unslash( $val ), FS_CHMOD_FILE );
+				break;
+			case 'caweb_live_drafts':
+			case 'caweb_debug_mode':
+				$cap = is_multisite() ? 'manage_network_options' : 'manage_options';
+
+				// if current user can't modify this setting, set to current saved value.
+				if ( ! current_user_can( $cap ) ) {
+					$val = get_option( $opt, false );
+				}
 				break;
 			default:
 				if ( 'on' === $val ) {
@@ -575,7 +584,7 @@ function caweb_get_site_options( $group = '', $special = false, $with_values = f
 
 	$caweb_alert_options = array( 'caweb_alerts' );
 
-	$caweb_addtl_options = array( 'caweb_live_drafts' );
+	$caweb_addtl_options = array( 'caweb_live_drafts', 'caweb_debug_mode' );
 
 	switch ( $group ) {
 		case 'general':

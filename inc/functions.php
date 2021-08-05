@@ -8,14 +8,14 @@
 /**
  * Returns the Site Wide Template Version Setting
  *
- * @since 1.5.4 Template Version 5 has been deprecated and all customers moved to 5.5. 
+ * @since 1.5.4 Template Version 5 has been deprecated and all customers moved to 5.5.
  * @return int
  */
 function caweb_template_version() {
-	$version = get_option( 'ca_site_version', CAWEB_MINIMUM_SUPPORTED_TEMPLATE_VERSION );
+	$version       = get_option( 'ca_site_version', CAWEB_MINIMUM_SUPPORTED_TEMPLATE_VERSION );
 	$theme_version = wp_get_theme()->get( 'Version' );
 
-	if( '1.5.4' <= $theme_version && '5.5' > $version ){
+	if ( '1.5.4' <= $theme_version && '5.5' > $version ) {
 		return 5.5;
 	}
 
@@ -29,7 +29,7 @@ function caweb_template_version() {
  * @return array
  */
 function caweb_template_versions( $include_beta = true ) {
-	$tmp = CAWEB_SUPPORTED_TEMPLATE_VERSIONS;
+	$tmp               = CAWEB_SUPPORTED_TEMPLATE_VERSIONS;
 	$template_versions = array();
 
 	if ( $include_beta ) {
@@ -37,9 +37,9 @@ function caweb_template_versions( $include_beta = true ) {
 	}
 
 	sort( $tmp );
-	
-	foreach( $tmp as $t ){
-		$template_versions["$t"] = "Version $t";
+
+	foreach ( $tmp as $t ) {
+		$template_versions[ "$t" ] = "Version $t";
 	}
 
 	return $template_versions;
@@ -67,6 +67,15 @@ function caweb_nav_menu_theme_locations() {
 }
 
 /**
+ * Is CAWeb Theme is running in Debug Mode.
+ *
+ * @return boolean
+ */
+function caweb_is_debug_enabled() {
+	return get_option( 'caweb_debug_mode', false );
+}
+
+/**
  * Load Minified Version of a file
  *
  * @param  string $f File to load.
@@ -76,7 +85,7 @@ function caweb_nav_menu_theme_locations() {
  */
 function caweb_get_min_file( $f, $ext = 'css' ) {
 	/* if a minified version exists load it */
-	if ( file_exists( CAWEB_ABSPATH . str_replace( ".$ext", ".min.$ext", $f ) ) ) {
+	if ( ! caweb_is_debug_enabled() && file_exists( CAWEB_ABSPATH . str_replace( ".$ext", ".min.$ext", $f ) ) ) {
 		return CAWEB_URI . str_replace( ".$ext", ".min.$ext", $f );
 	} else {
 		return CAWEB_URI . $f;
@@ -287,6 +296,7 @@ function caweb_get_attachment_post_meta( $image_url, $meta_key = '' ) {
 		$imgs       = array();
 
 		foreach ( $image_urls as $i => $img ) {
+			// phpcs:disable -- Slow meta query ok.
 			$query['meta_query'] = array(
 				array(
 					'key'     => '_wp_attached_file',
@@ -294,7 +304,7 @@ function caweb_get_attachment_post_meta( $image_url, $meta_key = '' ) {
 					'compare' => 'LIKE',
 				),
 			);
-
+			// phpcs:enable
 			$ids = get_posts( $query );
 
 			if ( ! empty( $ids ) ) {
@@ -430,8 +440,8 @@ function caweb_get_user_color() {
 /**
  * CAWeb Allowed HTML for wp_kses
  *
- * @link https://codex.wordpress.org/Function_Reference/wp_kses
-
+ * @link https://developer.wordpress.org/reference/functions/wp_kses/
+ *
  * @param  array   $exclude HTML tags to exclude.
  * @param  boolean $form Whether or not to include form fields.
  * @return array
@@ -465,16 +475,16 @@ function caweb_allowed_html( $exclude = array(), $form = false ) {
 	// Some of these are used by Bootstrap 4 Toggle Plugin.
 	// https://gitbrent.github.io/bootstrap4-toggle/#api.
 	$data = array(
-		'data-toggle' => array(),
-		'data-target' => array(),
-		'data-on' => array(),
-		'data-off' => array(),
-		'data-onstyle' => array(),
+		'data-toggle'   => array(),
+		'data-target'   => array(),
+		'data-on'       => array(),
+		'data-off'      => array(),
+		'data-onstyle'  => array(),
 		'data-offstyle' => array(),
-		'data-size' => array(),
-		'data-style' => array(),
-		'data-width' => array(),
-		'data-height' => array(),
+		'data-size'     => array(),
+		'data-style'    => array(),
+		'data-width'    => array(),
+		'data-height'   => array(),
 	);
 
 	$tags = array(
@@ -555,4 +565,3 @@ function caweb_safe_style_css( $styles ) {
 
 	return $styles;
 }
-

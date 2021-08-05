@@ -1,9 +1,18 @@
-<?php require_once( 'header.php' ); ?>
+<?php 
+require_once 'header.php'; 
 
-	<div id="page-container">
+// Page Classes.
+$page_title_class = apply_filters('caweb_page_title_class', 'page-title' );
+$page_container_class = apply_filters('caweb_page_container_class', 'page-container' );
+$page_main_content_class = apply_filters('caweb_page_main_content_class', 'main-content' );
+
+?>
+
+	<div id="page-container" class="<?php print esc_attr( $page_container_class ); ?>">
+		<?php do_action( 'caweb_pre_main_area' ); ?>
 		<div id="et-main-area">
-
-			<div id="main-content" class="main-content" tabindex="-1">
+			<div id="main-content" class="<?php print esc_attr( $page_main_content_class ); ?>" tabindex="-1">
+			<?php do_action( 'caweb_pre_main_primary' ); ?>
 				<main class="main-primary">
 
 					<?php
@@ -15,7 +24,7 @@
 
 						<?php
 						if ( 'on' === get_post_meta( $post->ID, 'ca_custom_post_title_display', true ) ) {
-							print esc_html( the_title( '<!-- Page Title--><h1 class="page-title">', '</h1>' ) );
+							print esc_html( the_title( sprintf('<!-- Page Title--><h1 class="%1$s">', esc_attr($page_title_class) ), '</h1>' ) );
 						}
 
 						print '<div class="entry-content">';
@@ -33,7 +42,7 @@
 
 						print '</div>';
 
-						if ( ! $caweb_is_page_builder_used && comments_open() && 'on' === et_get_option( 'divi_show_pagescomments', 'false' ) ) {
+						if ( ! $caweb_is_page_builder_used && comments_open() && function_exists( 'et_get_option' ) && 'on' === et_get_option( 'divi_show_pagescomments', 'false' ) ) {
 							comments_template( '', true );
 						}
 
@@ -47,4 +56,7 @@
 			</div> <!-- #main-content -->
 		</div>
 	</div>
+
+	<?php do_action( 'caweb_pre_footer' ); ?>
+
 	<?php get_footer(); ?>
