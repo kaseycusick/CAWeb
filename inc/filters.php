@@ -13,9 +13,15 @@ add_filter( 'script_loader_tag', 'caweb_script_loader_tag', 10, 3 );
 add_filter( 'map_meta_cap', 'caweb_add_unfiltered_html_capability', 1, 3 );
 add_filter( 'allowed_redirect_hosts', 'caweb_allowed_redirect_hosts' );
 add_filter( 'xmlrpc_enabled', 'caweb_xmlrpc_enabled' );
+add_filter( 'wp_kses_allowed_html', 'caweb_allowed_html', 10, 2 );
 
-/* Plugin Filters */
+/**
+ * Plugin Filters
+ */
+// WPForms.
 add_filter( 'wpforms_manage_cap', 'caweb_wpforms_custom_capability' );
+// The Events Calendar.
+add_filter( 'tribe_default_events_template_classes', 'caweb_default_events_template_classes' );
 
 /**
  * CAWeb Page Body Class
@@ -43,12 +49,10 @@ function caweb_body_class( $wp_classes, $extra_classes ) {
 
 	/* List of extra classes that need to be added to the body */
 	if ( isset( $post->ID ) ) {
-		$divi              = function_exists( 'et_pb_is_pagebuilder_used' ) && et_pb_is_pagebuilder_used( $post->ID ) || strpos( $post->post_content, 'et_pb_section' ) || strpos( $post->post_content, 'et_pb_fullwidth_section' );
-		$sidebar_enabled   = ! is_page();
-		$special_templates = is_tag() || is_archive() || is_category() || is_author();
+		$sidebar_enabled = ! is_page();
 
 		$whitelist = array(
-			( $divi && ! $special_templates ? 'divi_builder' : 'non_divi_builder' ),
+			( caweb_is_divi_used() ? 'divi_builder' : 'non_divi_builder' ),
 			( 'on' === get_post_meta( $post->ID, 'ca_custom_post_title_display', true ) ? 'title_displayed' : 'title_not_displayed' ),
 			( is_active_sidebar( 'sidebar-1' ) && $sidebar_enabled ? 'sidebar_displayed' : 'sidebar_not_displayed' ),
 		);
@@ -150,6 +154,20 @@ function caweb_wpforms_custom_capability( $cap ) {
 }
 
 /**
+ * Allows filtering the classes for the main element for the /events/ page.
+ *
+ * @since 5.8.0
+ *
+ * @param array<string> $classes An (unindexed) array of classes to apply.
+ */
+function caweb_default_events_template_classes( $classes ) {
+	$classes[] = 'main-content';
+
+	return $classes;
+}
+
+
+/**
  * CAWeb Disable XMLRPC
  *
  * @return boolean
@@ -167,13 +185,136 @@ function caweb_xmlrpc_enabled() {
  * @return array
  */
 function caweb_allowed_redirect_hosts( $hosts ) {
-	// Add all sites to list of allowed hosts.
-	$domains = array_map(
-		function( $s ) {
-			return $s->domain;
-		},
-		get_sites( array( 'deleted' => 0 ) )
+	// Add all sites to list of allowed hosts on multisite.
+	if ( is_multisite() ) {
+		$domains = array_map(
+			function( $s ) {
+				return $s->domain;
+			},
+			get_sites( array( 'deleted' => 0 ) )
+		);
+
+		$hosts = array_merge( $hosts, $domains );
+	}
+
+	return $hosts;
+};
+
+
+/**
+ * CAWeb Allowed HTML for wp_kses
+ *
+ * @link https://developer.wordpress.org/reference/functions/wp_kses/
+ * @link https://developer.wordpress.org/reference/functions/wp_kses_allowed_html/
+ *
+ * @param  array        $allowedposttags HTML tags to include.
+ * @param  string|array $context The context for which to retrieve tags. Allowed values are 'post', 'strip', 'data', 'entities', or the name of a field filter such as 'pre_user_description'.
+ * @return array
+ */
+function caweb_allowed_html( $allowedposttags, $context ) {
+
+	if ( 'post' !== $context ) {
+		return $allowedposttags;
+	}
+
+	$specials = array(
+		'aria-expanded' => true,
+		'aria-haspopup' => true,
+		'onkeydown'     => true,
+		'onkeypress'    => true,
+		'onkeyup'       => true,
+		'onclick'       => true,
+		'onfocus'       => true,
+		'onfocusin'     => true,
+		'onfocusout'    => true,
+		'onmousedown'   => true,
+		'onmouseup'     => true,
+		'onmouseover'   => true,
 	);
 
-	return array_merge( $hosts, $domains );
-};
+	foreach ( $allowedposttags as $tag => $data ) {
+		$data = array_merge( $data, $specials );
+		ksort( $data );
+		$allowedposttags[ $tag ] = $data;
+	}
+
+	$allowedposttags['bold']   = $allowedposttags['strong'];
+	$allowedposttags['style']  = array();
+	$allowedposttags['script'] = array();
+
+	$default_attrs = array(
+		'aria-describedby' => true,
+		'aria-details'     => true,
+		'aria-expanded'    => true,
+		'aria-label'       => true,
+		'aria-labelledby'  => true,
+		'aria-haspopup'    => true,
+		'aria-hidden'      => true,
+		'class'            => true,
+		'data-*'           => true,
+		'id'               => true,
+		'role'             => true,
+		'style'            => true,
+		'title'            => true,
+	);
+
+	$input_attrs = array_merge(
+		$default_attrs,
+		array(
+			'for'      => true,
+			'type'     => true,
+			'name'     => true,
+			'value'    => true,
+			'title'    => true,
+			'checked'  => true,
+			'selected' => true,
+			'required' => true,
+			'pattern'  => true,
+		)
+	);
+
+	$allowedposttags['form'] = array_merge(
+		$default_attrs,
+		array(
+			'action'         => true,
+			'accept'         => true,
+			'accept-charset' => true,
+			'enctype'        => true,
+			'method'         => true,
+			'name'           => true,
+			'novalidate'     => true,
+			'target'         => true,
+		)
+	);
+
+	$form_tags = array(
+		'label'    => $input_attrs,
+		'input'    => $input_attrs,
+		'li'       => $input_attrs,
+		'select'   => $input_attrs,
+		'option'   => $input_attrs,
+	);
+
+	$allowedposttags = array_merge( $allowedposttags, $form_tags );
+
+	ksort( $allowedposttags );
+
+	add_filter( 'safe_style_css', 'caweb_safe_style_css' );
+
+	return $allowedposttags;
+
+}
+
+/**
+ * Safe Style CSS
+ *
+ * @see https://developer.wordpress.org/reference/functions/safecss_filter_attr/
+ *
+ * @param  array $styles A string of CSS rules.
+ * @return array
+ */
+function caweb_safe_style_css( $styles ) {
+	$styles[] = 'list-style-position';
+
+	return $styles;
+}

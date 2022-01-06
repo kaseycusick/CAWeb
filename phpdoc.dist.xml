@@ -12,15 +12,14 @@
             <ignore>
                 <path>assets/**/*</path>
                 <path>css/**/*</path>
-                <path>docs/**/*</path>
                 <path>fonts/**/*</path>
                 <path>images/**/*</path>
                 <path>js/**/*</path>
-                <path>node-modules/**/*</path>
+                <path>node_modules/**/*</path>
+                <path>divi/extension/node_modules/**/*</path>
                 <path>page-templates/**/*</path>
                 <path>partials/**/*</path>
                 <path>vendor/**/*</path>
-                <path>.phpdoc/**/*</path>
             </ignore>
         </api>
     </version>
@@ -28,7 +27,7 @@
     Using phpDocumentor v3.1.0,
     https://github.com/phpDocumentor/phpDocumentor/releases/tag/v3.1.0
     -->
-    <setting name="state_version" value="5.5.21" />
+    <setting name="state_version" value="5.5.23" />
 	
     <setting name="nav_menu" value="
      Examples,gears,{Examples,gears,examples/index.html,View all available examples},{Icon Font Library,book,examples/icon-library.html,View all available icons};
@@ -55,10 +54,10 @@
      -->
  
     <!-- Github Settings -->
-    <setting name="stable_version" value="1.5.5a" />
+    <setting name="stable_version" value="1.5.7" />
     <setting name="github_user" value="CA-CODE-Works" />
     <setting name="github_repo" value="CAWeb" />
-    <setting name="github_branch" value="dev" />
+    <setting name="github_branch" value="master" />
  
     <!-- WordPress Settings -->
  
@@ -67,6 +66,6 @@
     <setting name="wp_prefixes" value="caweb_,et_,wp_" />
       
     <template name="vendor/caweb/phpdoc/" location="vendor/caweb/phpdoc/" />
-    <!--template name="." location="." /-->
+    <template name="." location="." />
 
 </phpdocumentor>

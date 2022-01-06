@@ -328,7 +328,7 @@ if ( ! function_exists( 'caweb_get_shortcode_from_content' ) ) {
 	 * @param  string $tag Shortcode tag to retrieve.
 	 * @param  bool   $all_matches Whether to retrieve all matches or just the first.
 	 *
-	 * @return array
+	 * @return array|Object
 	 */
 	function caweb_get_shortcode_from_content( $con = '', $tag = '', $all_matches = false ) {
 		if ( empty( $con ) || empty( $tag ) ) {
@@ -436,132 +436,68 @@ function caweb_get_user_color() {
 	return $_wp_admin_css_colors[ $admin_color ];
 }
 
-
 /**
- * CAWeb Allowed HTML for wp_kses
+ * Checks if page/post is using Divi Builder.
  *
- * @link https://developer.wordpress.org/reference/functions/wp_kses/
- *
- * @param  array   $exclude HTML tags to exclude.
- * @param  boolean $form Whether or not to include form fields.
- * @return array
+ * @return boolean
  */
-function caweb_allowed_html( $exclude = array(), $form = false ) {
-	$attr = array(
-		'id'    => array(),
-		'class' => array(),
-		'style' => array(),
-		'role'  => array(),
-	);
+function caweb_is_divi_used() {
 
-	$anchors = array(
-		'href'   => array(),
-		'title'  => array(),
-		'target' => array(),
-	);
+	$builder_used = function_exists( 'et_pb_is_pagebuilder_used' ) && et_pb_is_pagebuilder_used( get_the_ID() );
 
-	$imgs = array(
-		'src' => array(),
-		'alt' => array(),
-	);
-
-	$aria = array(
-		'aria-label'      => array(),
-		'aria-labelledby' => array(),
-		'aria-expanded'   => array(),
-		'aria-haspopup'   => array(),
-	);
-
-	// Some of these are used by Bootstrap 4 Toggle Plugin.
-	// https://gitbrent.github.io/bootstrap4-toggle/#api.
-	$data = array(
-		'data-toggle'   => array(),
-		'data-target'   => array(),
-		'data-on'       => array(),
-		'data-off'      => array(),
-		'data-onstyle'  => array(),
-		'data-offstyle' => array(),
-		'data-size'     => array(),
-		'data-style'    => array(),
-		'data-width'    => array(),
-		'data-height'   => array(),
-	);
-
-	$tags = array(
-		'div'    => array_merge( $attr, $aria, $data ),
-		'nav'    => array_merge( $attr, $aria, $data ),
-		'header' => array_merge( $attr, $aria, $data ),
-		'footer' => array_merge( $attr, $aria, $data ),
-		'p'      => $attr,
-		'br'     => array(),
-		'span'   => $attr,
-		'a'      => array_merge( $attr, $anchors, $aria, $data ),
-		'button' => array_merge( $attr, $aria, $data ),
-		'img'    => array_merge( $attr, $imgs ),
-		'strong' => $attr,
-		'bold'   => $attr,
-		'i'      => $attr,
-		'h1'     => $attr,
-		'h2'     => $attr,
-		'h3'     => $attr,
-		'h4'     => $attr,
-		'h5'     => $attr,
-		'h6'     => $attr,
-		'ol'     => $attr,
-		'ul'     => $attr,
-		'li'     => $attr,
-		'style'  => array(),
-		'script' => array(),
-	);
-
-	// Whether to include form fields or not.
-	if ( $form ) {
-		$form_attrs = array(
-			'action'     => array(),
-			'method'     => array(),
-			'enctype'    => array(),
-			'novalidate' => array(),
-		);
-
-		$input_attrs = array(
-			'for'      => array(),
-			'type'     => array(),
-			'name'     => array(),
-			'value'    => array(),
-			'title'    => array(),
-			'checked'  => array(),
-			'selected' => array(),
-			'required' => array(),
-			'pattern'  => array(),
-		);
-
-		$form_tags = array(
-			'form'     => array_merge( $attr, $form_attrs ),
-			'label'    => array_merge( $attr, $input_attrs, $aria, $data ),
-			'input'    => array_merge( $attr, $input_attrs, $aria, $data ),
-			'li'       => array_merge( $attr, $input_attrs, $aria, $data ),
-			'select'   => array_merge( $attr, $input_attrs, $aria, $data ),
-			'option'   => array_merge( $attr, $input_attrs, $aria, $data ),
-		);
-
-		$tags = array_merge( $tags, $form_tags );
+	// Default WordPress theme templates do not use the Divi Builder.
+	if ( is_tag() || is_archive() || is_category() || is_author() ) {
+		return false;
 	}
 
-	add_filter( 'safe_style_css', 'caweb_safe_style_css' );
+	$tribe_events = get_post_meta( get_the_ID(), '_EventOrigin' );
+	// if The Events Calendar Plugin is using the layout it triggers the builder is enabled.
+	if ( ! empty( $tribe_events ) && in_array( 'event-calendar', $tribe_events, true ) ) {
+		return false;
+	};
 
-	return array_diff_key( $tags, array_flip( $exclude ) );
+	return $builder_used;
+
 }
 
 /**
- * Safe Style CSS
+ * External CSS/JS files have been moved to the temp directory.
  *
- * @see https://developer.wordpress.org/reference/functions/safecss_filter_attr/
- *
- * @param  array $styles A string of CSS rules.
- * @return array
+ * @since 1.5.8 External CSS/JS files moved to wp-content/tmp/caweb-ext directory.
+ * @since 1.4.23 External CSS/JS files moved to wp-content/caweb-ext directory.
  */
-function caweb_safe_style_css( $styles ) {
-	$styles[] = 'list-style-position';
+function caweb_move_external_folder() {
+	// prior to 1.4.23 locations.
+	$pre_1_4_23_css = sprintf( '%1$s/css/external', CAWEB_ABSPATH );
+	$pre_1_4_23_js  = sprintf( '%1$s/js/external', CAWEB_ABSPATH );
 
-	return $styles;
+	// 1.4.23 location.
+	$post_1_4_23 = sprintf( '%1$s/caweb-ext', WP_CONTENT_DIR );
+
+	$locations = array(
+		"$pre_1_4_23_css "  => CAWEB_EXTERNAL_DIR . 'css/',
+		"$pre_1_4_23_js"    => CAWEB_EXTERNAL_DIR . 'js/',
+		"$post_1_4_23/css"  => CAWEB_EXTERNAL_DIR . 'css/',
+		"$post_1_4_23/js"   => CAWEB_EXTERNAL_DIR . 'js/',
+	);
+
+	foreach ( $locations as $old_location => $new_location ) {
+		if ( file_exists( $old_location ) ) {
+			rename( $old_location, $new_location );
+			rmdir( $old_location );
+		}
+	}
+
+	$old_paths = array(
+		$pre_1_4_23_css => glob( "$pre_1_4_23_css/*" ),
+		$pre_1_4_23_js  => glob( "$pre_1_4_23_js/*" ),
+		$post_1_4_23    => glob( "$post_1_4_23/*" ),
+	);
+
+	foreach ( $old_paths as $path => $files ) {
+		if ( file_exists( $path ) && empty( $files ) ) {
+			rmdir( $path );
+		}
+	}
+
 }

@@ -472,6 +472,7 @@ function caweb_display_google_options() {
 	$google_translate_mode       = get_option( 'ca_google_trans_enabled', 'none' );
 	$google_translate_enabled    = 'custom' !== $google_translate_mode ? ' class="hidden"' : '';
 	$google_translate_page       = get_option( 'ca_google_trans_page', '' );
+	$google_translate_text       = get_option( 'ca_google_trans_text', '' );
 	$google_translate_new_window = get_option( 'ca_google_trans_page_new_window', true ) ? ' checked' : '';
 	$google_translate_icon       = get_option( 'ca_google_trans_icon', 'globe' );
 
@@ -557,6 +558,14 @@ function caweb_display_google_options() {
 				<input type="text" name="ca_google_trans_page" id="ca_google_trans_page" class="form-control" value="<?php print esc_attr( $google_translate_page ); ?>" >
 			</div>
 
+			<!-- Google Translate Text -->
+			<div class="form-group col-sm-5">
+				<label for="ca_google_trans_text" class="d-block mb-0"><strong>Translate Link Text</strong></label>
+				<small class="mb-2 text-muted d-block">Add text to the Google Translate Service link.</small>
+				<!-- Translate Text Field -->
+				<input type="text" name="ca_google_trans_text" id="ca_google_trans_text" class="form-control" value="<?php print esc_attr( $google_translate_text ); ?>" >
+			</div>
+
 			<div class="form-group col-sm-2">
 				<!-- Open Translate in New Page -->
 				<label for="ca_google_trans_page_new_window" class="d-block mb-0"><strong>Open in New Tab</strong></label>
@@ -575,7 +584,7 @@ function caweb_display_google_options() {
 							'header' => 'Icon',
 						)
 					),
-					caweb_allowed_html( array(), true )
+					'post'
 				);
 				?>
 				<small class="mb-2 text-muted d-block">Select an icon to display in front of the Google Translate Page link.</small>
@@ -865,7 +874,7 @@ function caweb_display_alert_banner_settings( $is_active = false ) {
 											'header' => 'Icon',
 										)
 									),
-									caweb_allowed_html( array(), true )
+									'post'
 								);
 								?>
 							</div>

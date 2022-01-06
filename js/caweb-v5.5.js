@@ -451,8 +451,23 @@ function _tagLinks(evObj, evCat, evAct, evLbl, evVal, evNonInter, exisAttr)
 	}
 }
 
+function rgb2hex(rgb){
+	rgb = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
+	return "#" +
+	 ("0" + parseInt(rgb[1],10).toString(16)).slice(-2) +
+	 ("0" + parseInt(rgb[2],10).toString(16)).slice(-2) +
+	 ("0" + parseInt(rgb[3],10).toString(16)).slice(-2);
+}
+
+function stripeIframeAttributes(frame){
+	$(frame).removeAttr('frameborder');
+	$(frame).removeAttr('scrolling');
+	$(frame).removeAttr('allowtransparency');
+	$(frame).removeAttr('allowfullscreen');
+}
+
 /**
- * CA State Template v5.5 -  @version v5.5.22 -  6/25/2021 
+ * CA State Template v5.5 -  @version v5.5.23 -  8/2/2021 
   STYLES COMPILED FROM SOURCE (source/js) DO NOT MODIFY */
 /*! modernizr (Custom Build) | MIT *
  * https://modernizr.com/download/?-flexbox-setclasses !*/
@@ -18680,22 +18695,6 @@ $(document).ready(function () {
 	
  });
 
-function rgb2hex(rgb){
-	rgb = rgb.match(/rgb\((\d+),\s*(\d+),\s*(\d+)\)/);
-	return "#" +
-	 ("0" + parseInt(rgb[1],10).toString(16)).slice(-2) +
-	 ("0" + parseInt(rgb[2],10).toString(16)).slice(-2) +
-	 ("0" + parseInt(rgb[3],10).toString(16)).slice(-2);
-}
-
-function stripeIframeAttributes(frame){
-	$(frame).removeAttr('frameborder');
-	$(frame).removeAttr('scrolling');
-	$(frame).removeAttr('allowtransparency');
-	$(frame).removeAttr('allowfullscreen');
-}
-
-
  function checkSize(){
 	var utility_container = $('.global-header .utility-header .container');
 	var translate = utility_container.find('#google_translate_element')[0];
@@ -19010,7 +19009,7 @@ jQuery(document).ready(function() {
 	Add aria labels to datatables search field 
 	*/
 	var dataTables_filter = $('.dataTables_filter')
-
+	
 	if( dataTables_filter.length ){
 		dataTables_filter.each(function(index, element) {
 			var l = $(element).find('label');
@@ -19020,8 +19019,62 @@ jQuery(document).ready(function() {
 			$(i).attr('id', $(i).attr('aria-controls') + '-search');
 		});
 	}
+
+	setTimeout( function(){
+		/* 
+		TablePress Accessibility 
+		Add missing aria-sort to headers
+		*/
+		var tablepress_headers = $('table[id^="tablepress-"] thead tr th');
+
+		if( tablepress_headers.length ){
+			add_aria_sort();
+
+			tablepress_headers.each(function(index, element) {
+				$(element).on('click', add_aria_sort );
+			});
+
+			function add_aria_sort(){
+				tablepress_headers.each(function(index, element) {
+					if( undefined == $(element).attr('aria-sort') ){
+						$(element).attr('aria-sort', 'none');
+					}
+				});
+			}
+		}
+
+		/* 
+		TablePress Accessibility 
+		Add href to pagination links
+		*/
+		var dataTables_pagination = $('.dataTables_paginate .paginate_button'); 
+
+		if( dataTables_pagination.length ){
+			dataTables_pagination.each(function(index, element){
+				$(element).attr('href', '#');
+			});
+		}
+	}, 500);
+	
 });
 jQuery(document).ready(function() {
+	
+	
+	/*
+	WPForms Accessibility 
+	Give focus to confirmation message.
+	*/
+	var wpforms_confirmation_msg = $('div[id^="wpforms-confirmation-"] p');
+
+
+	if( wpforms_confirmation_msg.length ){
+		wpforms_confirmation_msg.each(function(index, element) {
+			$(element).attr('tabindex', '0');
+			
+			$(element).focus();
+		});
+	}
+
 	/*
 	WPForms Accessibility 
 	Retrieve radio field containers
@@ -19184,6 +19237,21 @@ jQuery(document).ready(function() {
 	 });
 }
 });
+jQuery(document).ready(function() {
+	/* 
+	Fixes Deep Links issue created by Divi
+    */
+    var links = $('a[href^="#"]:not([href="#"])');
+    
+    // Run only if there are deep links on the current page
+   if( links.length ){
+    	links.each(function(index, element) {
+	    	// Add et_smooth_scroll_disabled to each link
+		    $(element).addClass('et_smooth_scroll_disabled');
+        });
+    }
+
+ });
 jQuery(document).ready(function() {
 	/*
     Divi Fullwidth Header Module Accessibility 
@@ -19361,6 +19429,7 @@ jQuery(document).ready(function() {
 	// Run only if there is a Toggle Module on the current page
 	if( toggle_modules.length  ){
 		toggle_modules.each(function(index, element) {
+			var title = $(element).find('.et_pb_toggle_title');
 			var expanded = $(element).hasClass('et_pb_toggle_open') ?  'true' : 'false' ;
 
 			$(element).attr('tabindex', 0);
@@ -19368,41 +19437,75 @@ jQuery(document).ready(function() {
 			$(element).attr('aria-expanded', expanded);
 
 			// Events
-			$(element).on('click keydown', function(e){
-				// Shows or hides content in accordion when Enter or Space key is pressed
-				if (e.type === 'keydown') {
-					var toggleKeys = [13, 32, 38, 40]; // key codes for enter and space, respectively
-					var toggleKeyPressed = toggleKeys.includes(e.which);
-
-					if (toggleKeyPressed) {
-						setTimeout( function(){
-							$(element).toggleClass('et_pb_toggle_open');
-							$(element).toggleClass('et_pb_toggle_close');
-
-							if ($(element).hasClass('et_pb_toggle_open')) {
-								$(element).find('.et_pb_toggle_content').css('display', 'block');
-							} else {
-								$(element).find('.et_pb_toggle_content').css('display', 'none')
-							}
-						}, 500);
+			$(title).on('click', function(e){
+				setTimeout( function(){
+					if ($(element).hasClass('et_pb_toggle_open')) {
+						toggleModule(element, false);
+					}else{
+						toggleModule(element);
 					}
+				}, 500);
+			});
 
-					// Prevents spacebar from scrolling page to the bottom
-					if (e.which === 32) {
-						e.preventDefault();
-					}
+			$(element).on('keydown', function(e){
+				var toggleKeys = [1, 13, 32]; // key codes for enter(13) and space(32), JAWS registers Enter keydown as click and e.which = 1
+				var toggleKeyPressed = toggleKeys.includes(e.which);
+				var toggleOpen = [40]; // down arrow to open
+				var toggleOpenPressed = toggleOpen.includes(e.which);
+				var toggleClose = [38] //up arrow to close
+				var toggleClosePressed = toggleClose.includes(e.which);
+
+				if (toggleKeyPressed) {
+					setTimeout( function(){
+						if ($(element).hasClass('et_pb_toggle_open')) {
+							toggleModule(element, false);
+						}else{
+							toggleModule(element);
+						}
+					}, 500);
 				}
 
-				// Modifies value for aria-expanded attribute
-				// when toggle is clicked or Enter/Space key is pressed
-				if (e.type === 'click' || toggleKeyPressed) {
+				if (toggleOpenPressed) {
 					setTimeout( function(){
-						var expanded = $(element).hasClass('et_pb_toggle_open') ?  'true' : 'false' ;
-						$(element).attr('aria-expanded', expanded);
-					}, 1000 );
+						toggleModule(element);
+					}, 500);
+				}
+
+				if (toggleClosePressed) {
+					setTimeout( function(){
+						toggleModule(element, false);
+					}, 500)
+				}
+
+				// Prevents spacebar from scrolling page to the bottom
+				if (e.which === 32) {
+					e.preventDefault();
 				}
 			});
 		});
+
+		function toggleModule( module, open = true ){
+			if( open ){
+				$(module).removeClass('et_pb_toggle_close')
+				$(module).addClass('et_pb_toggle_open');
+
+				$(module).find('.et_pb_toggle_content').css('display', 'block');
+
+			}else{
+				$(module).removeClass('et_pb_toggle_open')
+				$(module).addClass('et_pb_toggle_close');
+
+				$(module).find('.et_pb_toggle_content').css('display', 'none')
+
+			}
+
+			// Modifies value for aria-expanded attribute
+			// when toggle is clicked or Enter/Space key is pressed
+			setTimeout( function(){
+				var expanded = $(module).hasClass('et_pb_toggle_open') ?  'true' : 'false' ;
+				$(module).attr('aria-expanded', expanded);
+			}, 1000 );
+		}
 	}
 });
 
